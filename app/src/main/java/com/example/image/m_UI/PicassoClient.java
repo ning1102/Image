@@ -1,6 +1,7 @@
 package com.example.image.m_UI;
 
 import android.content.Context;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.example.image.R;
@@ -17,4 +18,8 @@ public class PicassoClient {
             Picasso.with(c).load(R.drawable.placeholder).into(img);
         }
     }
+
+
+
+
 }

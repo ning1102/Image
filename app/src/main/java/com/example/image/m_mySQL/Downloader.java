@@ -6,6 +6,8 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.GridView;
 import android.widget.ListView;
+import android.widget.SearchView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -15,17 +17,25 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 
-public class Downloader extends AsyncTask<Void, Void, String> {
+public class Downloader extends AsyncTask<Void, Void,String > {
+
 
     Context c;
     String urlAddress;
     GridView gv;
+    SearchView searchView;
+    Spinner spinner_floor;
+    Spinner spinner_group;
 
     ProgressDialog pd;
-    public Downloader(Context c, String urlAddress, GridView gv) {
+
+    public Downloader(Context c, String urlAddress, GridView gv, SearchView searchView,Spinner spinner_floor,Spinner spinner_group) {
         this.c = c;
         this.urlAddress = urlAddress;
         this.gv = gv;
+        this.searchView = searchView;
+        this.spinner_floor =spinner_floor;
+        this.spinner_group = spinner_group;
     }
 
     @Override
@@ -55,7 +65,7 @@ public class Downloader extends AsyncTask<Void, Void, String> {
         }else {
             //PARSE
             Log.i("Show","jsonData-->> " +jsonData);
-            DataParser parser = new DataParser(c,jsonData,gv);
+            DataParser parser = new DataParser(c,jsonData,gv,searchView,spinner_floor,spinner_group);
             parser.execute();
         }
     }

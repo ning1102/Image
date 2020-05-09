@@ -1,0 +1,1277 @@
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/vcs.xml	(date 1587739756567)
++++ .idea/vcs.xml	(date 1587739756567)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="$PROJECT_DIR$" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/AndroidManifest.xml	(date 1588165521652)
+@@ -5,6 +5,7 @@
+     <uses-permission android:name="android.permission.INTERNET" />
+ 
+     <application
++        android:usesCleartextTraffic="true"
+         android:allowBackup="true"
+         android:icon="@mipmap/ic_launcher"
+         android:label="@string/app_name"
+Index: app/src/main/java/com/example/image/m_mySQL/Downloader.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_mySQL/Downloader.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_mySQL/Downloader.java	(date 1588724033470)
+@@ -6,6 +6,8 @@
+ import android.util.Log;
+ import android.widget.GridView;
+ import android.widget.ListView;
++import android.widget.SearchView;
++import android.widget.Spinner;
+ import android.widget.Toast;
+ 
+ import java.io.BufferedInputStream;
+@@ -15,17 +17,25 @@
+ import java.io.InputStreamReader;
+ import java.net.HttpURLConnection;
+ 
+-public class Downloader extends AsyncTask<Void, Void, String> {
++public class Downloader extends AsyncTask<Void, Void,String > {
+ 
++
+     Context c;
+     String urlAddress;
+     GridView gv;
++    SearchView searchView;
++    Spinner spinner_floor;
++    Spinner spinner_group;
+ 
+     ProgressDialog pd;
+-    public Downloader(Context c, String urlAddress, GridView gv) {
++
++    public Downloader(Context c, String urlAddress, GridView gv, SearchView searchView,Spinner spinner_floor,Spinner spinner_group) {
+         this.c = c;
+         this.urlAddress = urlAddress;
+         this.gv = gv;
++        this.searchView = searchView;
++        this.spinner_floor =spinner_floor;
++        this.spinner_group = spinner_group;
+     }
+ 
+     @Override
+@@ -55,7 +65,7 @@
+         }else {
+             //PARSE
+             Log.i("Show","jsonData-->> " +jsonData);
+-            DataParser parser = new DataParser(c,jsonData,gv);
++            DataParser parser = new DataParser(c,jsonData,gv,searchView,spinner_floor,spinner_group);
+             parser.execute();
+         }
+     }
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/build.gradle	(date 1589015900461)
+@@ -1,13 +1,13 @@
+ apply plugin: 'com.android.application'
+ 
+ android {
+-    compileSdkVersion 28
++    compileSdkVersion 29
+ 
+ 
+     defaultConfig {
+         applicationId "com.example.image"
+-        minSdkVersion 15
+-        targetSdkVersion 28
++        minSdkVersion 17
++        targetSdkVersion 29
+         versionCode 1
+         versionName "1.0"
+ 
+@@ -28,7 +28,7 @@
+ 
+     implementation 'androidx.appcompat:appcompat:1.1.0'
+     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+-    testImplementation 'junit:junit:4.12'
++    testImplementation 'junit:junit:4.13'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+ 
+@@ -36,11 +36,15 @@
+     implementation 'com.squareup.picasso:picasso:2.5.2'
+     implementation 'com.loopj.android:android-async-http:1.4.9'
+ 
++    //noinspection GradleCompatible
+     implementation 'com.android.support:recyclerview-v7:28.0.0'
++    //noinspection GradleCompatible
+     implementation 'com.android.support:design:28.0.0'
+     implementation 'com.squareup.okhttp:okhttp:2.7.5'
+     implementation 'com.squareup.okio:okio:2.5.0'
++    //noinspection GradleCompatible
+     implementation 'com.android.support:gridlayout-v7:28.0.0'
++    //noinspection GradleCompatible
+     implementation 'com.android.support:cardview-v7:28.0.0'
+ 
+ }
+Index: app/src/main/java/com/example/image/m_UI/AdapterSpinner.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_UI/AdapterSpinner.java	(date 1588943110749)
++++ app/src/main/java/com/example/image/m_UI/AdapterSpinner.java	(date 1588943110749)
+@@ -0,0 +1,177 @@
++package com.example.image.m_UI;
++
++import android.content.Context;
++import android.content.Intent;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.BaseAdapter;
++import android.widget.Filter;
++import android.widget.Filterable;
++import android.widget.ImageView;
++import android.widget.TextView;
++
++import com.example.image.R;
++import com.example.image.m_DataObject.Spacecraft;
++import com.example.image.m_DetailActivity.Detail_shop;
++
++import java.util.ArrayList;
++
++public class AdapterSpinner extends BaseAdapter implements Filterable {
++
++    Context c;
++    ArrayList<Spacecraft> spacecrafts;
++    ArrayList<Spacecraft> filterList;
++    CustomFilter filter;
++
++
++    LayoutInflater inflater;
++
++    public AdapterSpinner(Context c, ArrayList<Spacecraft> spacecrafts) {
++        this.c = c;
++        this.spacecrafts = spacecrafts;
++        this.filterList = spacecrafts;
++
++        inflater = (LayoutInflater) c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
++    }
++
++
++    @Override
++    public int getCount() {
++        return spacecrafts.size();
++    }
++
++    @Override
++    public Object getItem(int position) {
++        return spacecrafts.get(position);
++    }
++
++    @Override
++    public long getItemId(int position) {
++        return spacecrafts.indexOf(getItem(position));
++    }
++
++    @Override
++    public View getView(int position, View convertView, ViewGroup parent) {
++        if (convertView == null)
++        {
++            convertView = LayoutInflater.from(c).inflate(R.layout.model,parent,false);
++            //convertView = inflater.inflate(R.layout.model,parent,false);
++        }
++        //SET DATA
++        TextView nameTxt = (TextView) convertView.findViewById(R.id.nameTxt);
++        ImageView img = (ImageView) convertView.findViewById(R.id.logoImage);
++
++
++        final Spacecraft s = (Spacecraft) this.getItem(position);
++
++        //BIND DATA'
++        //Spacecraft spacecraft = spacecrafts.get(position);
++        nameTxt.setText(s.getName());
++
++        //IMG
++        PicassoClient.downloadImage(c,s.getImageUrl(),img);
++
++
++
++
++
++        convertView.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View v) {
++                openDetailActivity(s.getId(),s.getName(),s.getImageUrl(),s.getFloor_Shop(),s.getWebsite(),
++                        s.getOpentime(),s.getClosetime(),s.getDescription_Shop(),s.getTel(),s.getPicMap(),s.getTypeShopName(),s.getGroupName());
++
++            }
++        });
++
++
++        return convertView;
++    }
++
++    private void openDetailActivity(String id, String name, String imageUrl, String floor_shop, String website, String opentime, String closetime,
++                                            String description_shop, String tel, String picMap, String typeShopName, String groupName) {
++
++        Intent i = new Intent(c, Detail_shop.class);
++
++        //PACK DATA
++        i.putExtra("ID_KEY",id);
++        i.putExtra("NAME_KEY",name);
++        i.putExtra("IMAGEURL_KEY",imageUrl);
++        i.putExtra("FLOORSHOP_KEY",floor_shop);
++        i.putExtra("WEBSITE_KEY",website);
++        i.putExtra("OPENTIME_KEY",opentime);
++        i.putExtra("CLOSETIME_KEY",closetime);
++        i.putExtra("DESCRIPTION_KEY",description_shop);
++        i.putExtra("TEL_KEY",tel);
++        i.putExtra("PICMAP_KEY",picMap);
++        i.putExtra("TYPESHOPNAME_KEY",typeShopName);
++        i.putExtra("GROUPNAME_KEY",groupName);
++
++
++
++        c.startActivity(i);
++    }
++
++
++    @Override
++    public Filter getFilter() {
++
++        if (filter == null)
++        {
++            filter  = new CustomFilter();
++        }
++        return filter;
++    }
++
++    class CustomFilter extends Filter
++    {
++
++        @Override
++        protected FilterResults performFiltering(CharSequence constraint) {
++
++            FilterResults results = new FilterResults();
++
++            if (constraint != null && constraint.length() >0)
++            {
++                //Constraint To Upper
++                constraint = constraint.toString().toUpperCase();
++
++                ArrayList<Spacecraft> filters = new ArrayList<Spacecraft>();
++
++                //Filtering
++                for (int i =0 ; i < filterList.size();i++)
++                {
++                    if (filterList.get(i).getFloor_Shop().toUpperCase().contains(constraint) && filterList.get(i).getGroupName().toUpperCase().contains(constraint))
++                    {
++                        Spacecraft ss = new Spacecraft(filterList.get(i).getId(),filterList.get(i).getName(),filterList.get(i).getImageUrl(),filterList.get(i).getFloor_Shop(),filterList.get(i).getWebsite(),
++                                filterList.get(i).getOpentime(),filterList.get(i).getClosetime(),filterList.get(i).getDescription_Shop(),filterList.get(i).getTel(),filterList.get(i).getPicMap(),filterList.get(i).getTypeShopName(),
++                                filterList.get(i).getGroupName());
++                        filters.add(ss);
++
++                    }
++                    results.count = filters.size();
++                    results.values = filters;
++                }
++            }else
++            {
++                results.count = filterList.size();
++                results.values = filterList;
++            }
++
++            return results;
++        }
++
++        @Override
++        protected void publishResults(CharSequence constraint, FilterResults results) {
++            spacecrafts = (ArrayList<Spacecraft>) results.values;
++            notifyDataSetChanged();
++
++        }
++
++
++    }
++
++
++
++}
+Index: app/src/main/java/com/example/image/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/MainActivity.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/MainActivity.java	(date 1589024210195)
+@@ -6,12 +6,26 @@
+ import android.os.AsyncTask;
+ import android.os.Bundle;
+ import android.util.Log;
++import android.view.View;
++import android.widget.AdapterView;
+ import android.widget.ArrayAdapter;
+ import android.widget.GridView;
+ import android.widget.ListView;
++import android.widget.SearchView;
++import android.widget.Spinner;
++import android.widget.Toast;
+ 
++import com.example.image.m_DataObject.Spacecraft;
++import com.example.image.m_UI.CustomAdapter;
+ import com.example.image.m_mySQL.Downloader;
+ import com.example.image.m_mySQL.NetConnector;
++import com.koushikdutta.async.future.FutureCallback;
++import com.koushikdutta.ion.Ion;
++import com.koushikdutta.ion.Response;
++
++import org.json.JSONArray;
++import org.json.JSONException;
++import org.json.JSONObject;
+ 
+ import java.io.BufferedReader;
+ import java.io.IOException;
+@@ -23,20 +37,128 @@
+ import java.net.URLConnection;
+ import java.nio.Buffer;
+ import java.util.ArrayList;
++import java.util.List;
+ 
+ public class MainActivity extends AppCompatActivity {
+ 
+-    GridView gv;
++    public  static final String  locallhost = "http://192.168.43.79/" ;
+     private static final String urlAddress = "http://192.168.43.79/testdb/detail.php";
++    GridView gv;
++    SearchView searchView ;
++    Spinner spinner_floor;
++    Spinner spinner_group;
++    ArrayList<String> FloorList;
++    ArrayList<String> GroupList;
++
++
++
++    //defind array adapter
++
++
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_main);
+ 
++        //spinner
++        FloorList = new ArrayList<>();
++        FloorList.add(0,"ทั้งหมด");
++        GroupList = new ArrayList<>();
++        GroupList.add(0,"ทั้งหมด");
++        spinner_floor = findViewById(R.id.spinfloor);
++        spinner_group = findViewById(R.id.spingroup);
++        loadSpinnerData();
++
+         gv = (GridView)findViewById(R.id.json_gridview);
+-        new Downloader(MainActivity.this,urlAddress,gv).execute();
++        //search view
++        searchView = (SearchView)findViewById(R.id.searchShop);
++
++        //spinner
++
++
++
++
++
++
++        new Downloader(MainActivity.this,urlAddress,gv,searchView,spinner_floor,spinner_group).execute();
++
++
++
++    }
++
++
++
++
++    //เชื่อมฐานข้อมูลด้วย Ion และแสดงข้อมูล
++    private void loadSpinnerData() {
++
++        Ion.with(getApplicationContext())
++                .load(locallhost +"testdb/spinfloor.php")
++                .asString()
++                .withResponse()
++                .setCallback(new FutureCallback<Response<String>>() {
++                    @Override
++                    public void onCompleted(Exception e, Response<String> result) {
++                        String aa = result.getResult();
++
++                        try{
++                            JSONObject jsonfloor = new JSONObject(aa);
++                            JSONArray jsonArrayfloor = jsonfloor.getJSONArray("Android");
++                            for (int i = 0 ; i < jsonArrayfloor.length(); i++){
++                                JSONObject jsonObjectfloor = jsonArrayfloor.getJSONObject(i);
++                                String floor_shop =  jsonObjectfloor.getString("floor_shop");
++
++                                Log.i("LG",floor_shop);
++
++                                FloorList.add(floor_shop);
++
++                            }
++
++                            spinner_floor.setAdapter(new ArrayAdapter<>(MainActivity.this,android.R.layout.simple_spinner_dropdown_item, FloorList));
++
++
++
++                        } catch (JSONException ex) {
++                            ex.printStackTrace();
++                        }
++
++                    }
++                });
++
++
++        Ion.with(getApplicationContext())
++                .load(locallhost + "testdb/spingroup.php")
++                .asString()
++                .withResponse()
++                .setCallback(new FutureCallback<Response<String>>() {
++                    @Override
++                    public void onCompleted(Exception e, Response<String> result) {
++                        String typeShop = result.getResult();
++
++                        try{
++                            JSONObject jsonType = new JSONObject(typeShop);
++                            JSONArray jsonArrayType = jsonType.getJSONArray("Android");
++                            for (int i = 0 ; i < jsonArrayType.length(); i++){
++                                JSONObject jsonObjectType = jsonArrayType.getJSONObject(i);
++                                String shopTypefood =  jsonObjectType.getString("group_name");
++
++                                Log.i("zz",shopTypefood);
++
++                                GroupList.add(shopTypefood);
++
++                            }
++                            spinner_group.setAdapter(new ArrayAdapter<>(MainActivity.this,android.R.layout.simple_spinner_dropdown_item, GroupList));
++
+ 
++                        } catch (JSONException ex) {
++                            ex.printStackTrace();
++                        }
+ 
++                    }
++                });
+     }
++    //จบเชื่อมฐานข้อมูลด้วย Ion และแสดงข้อมูล
++
++
+ }
+Index: app/src/main/java/com/example/image/m_UI/PicassoClient.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_UI/PicassoClient.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_UI/PicassoClient.java	(date 1587968857185)
+@@ -1,6 +1,7 @@
+ package com.example.image.m_UI;
+ 
+ import android.content.Context;
++import android.util.Log;
+ import android.widget.ImageView;
+ 
+ import com.example.image.R;
+@@ -17,4 +18,8 @@
+             Picasso.with(c).load(R.drawable.placeholder).into(img);
+         }
+     }
++
++
++
++
+ }
+Index: app/src/main/java/com/example/image/m_UI/CustomAdapter.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_UI/CustomAdapter.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_UI/CustomAdapter.java	(date 1589010530502)
+@@ -5,7 +5,10 @@
+ import android.view.LayoutInflater;
+ import android.view.View;
+ import android.view.ViewGroup;
++import android.widget.AdapterView;
+ import android.widget.BaseAdapter;
++import android.widget.Filter;
++import android.widget.Filterable;
+ import android.widget.ImageView;
+ import android.widget.TextView;
+ 
+@@ -16,16 +19,23 @@
+ 
+ import java.util.ArrayList;
+ 
+-public class CustomAdapter extends BaseAdapter {
++public class CustomAdapter extends BaseAdapter implements Filterable {
++
+ 
+     Context c;
+     ArrayList<Spacecraft> spacecrafts;
++    ArrayList<Spacecraft> filterList;
++
++    CustomFilter filter;
+ 
+     LayoutInflater inflater;
+ 
++
++
+     public CustomAdapter(Context c, ArrayList<Spacecraft> spacecrafts) {
+         this.c = c;
+         this.spacecrafts = spacecrafts;
++        this.filterList = spacecrafts;
+ 
+         inflater = (LayoutInflater) c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+     }
+@@ -43,26 +53,26 @@
+ 
+     @Override
+     public long getItemId(int position) {
+-        return position;
++
++        return spacecrafts.indexOf(getItem(position));
+     }
+ 
+     @Override
+     public View getView(int position, View convertView, ViewGroup parent) {
++
+         if (convertView == null)
+         {
+             convertView = LayoutInflater.from(c).inflate(R.layout.model,parent,false);
+-
+             //convertView = inflater.inflate(R.layout.model,parent,false);
+-
+         }
+ 
++
++        //SET DATA
+         TextView nameTxt = (TextView) convertView.findViewById(R.id.nameTxt);
+         ImageView img = (ImageView) convertView.findViewById(R.id.logoImage);
+ 
+ 
+ 
+-
+-
+         final Spacecraft s = (Spacecraft) this.getItem(position);
+ 
+         //BIND DATA'
+@@ -74,11 +84,14 @@
+ 
+ 
+ 
++
++
+         convertView.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View v) {
+                 openDetailActivity(s.getId(),s.getName(),s.getImageUrl(),s.getFloor_Shop(),s.getWebsite(),
+-                        s.getOpentime(),s.getClosetime(),s.getDescription_Shop(),s.getTel(),s.getPicMap());
++                        s.getOpentime(),s.getClosetime(),s.getDescription_Shop(),s.getTel(),s.getPicMap(),s.getTypeShopName(),s.getGroupName());
++
+             }
+         });
+ 
+@@ -87,7 +100,7 @@
+ 
+     private void openDetailActivity(String id, String name, String imageUrl,String floor_Shop,
+                                     String website,String opentime, String  closetime, String  description_Shop,
+-                                    String  tel ,String picMap)
++                                    String  tel ,String picMap,String typeShopName,String groupName )
+     {
+         Intent i = new Intent(c, Detail_shop.class);
+ 
+@@ -102,9 +115,74 @@
+         i.putExtra("DESCRIPTION_KEY",description_Shop);
+         i.putExtra("TEL_KEY",tel);
+         i.putExtra("PICMAP_KEY",picMap);
++        i.putExtra("TYPESHOPNAME_KEY",typeShopName);
++        i.putExtra("GROUPNAME_KEY",groupName);
+ 
+-      //  i.putExtra("PICFLOOR_KEY",Pic_floor);
++
+ 
+         c.startActivity(i);
+     }
++
++
++    @Override
++    public Filter getFilter() {
++
++        if (filter == null) {
++            filter = new CustomFilter();
++        }
++            return filter;
++
++
++    }
++
++    class CustomFilter extends Filter
++    {
++
++        @Override
++        protected FilterResults performFiltering(CharSequence constraint) {
++
++            FilterResults results = new FilterResults();
++
++           if (constraint != null && constraint.length() >0)
++           {
++               //Constraint To Upper
++               constraint = constraint.toString().toUpperCase();
++
++               ArrayList<Spacecraft> filters = new ArrayList<Spacecraft>();
++
++               //Filtering
++               for (int i =0 ; i < filterList.size();i++)
++               {
++                   if (filterList.get(i).getName().toUpperCase().contains(constraint) || filterList.get(i).getFloor_Shop().toUpperCase().contains(constraint) || filterList.get(i).getGroupName().toUpperCase().contains(constraint))
++                   {
++                       Spacecraft ss = new Spacecraft(filterList.get(i).getId(),filterList.get(i).getName(),filterList.get(i).getImageUrl(),filterList.get(i).getFloor_Shop(),filterList.get(i).getWebsite(),
++                               filterList.get(i).getOpentime(),filterList.get(i).getClosetime(),filterList.get(i).getDescription_Shop(),filterList.get(i).getTel(),filterList.get(i).getPicMap(),filterList.get(i).getTypeShopName(),
++                               filterList.get(i).getGroupName());
++                       filters.add(ss);
++
++                   }
++                   results.count = filters.size();
++                   results.values = filters;
++               }
++           }else
++            {
++                results.count = filterList.size();
++                results.values = filterList;
++           }
++
++            return results;
++        }
++
++        @Override
++        protected void publishResults(CharSequence constraint, FilterResults results) {
++            spacecrafts = (ArrayList<Spacecraft>) results.values;
++            notifyDataSetChanged();
++
++        }
++
++
++    }
++
++
++
+ }
+Index: app/src/main/java/com/example/image/m_UI/ImageMap.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_UI/ImageMap.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_UI/ImageMap.java	(date 1587970821079)
+@@ -1,6 +1,7 @@
+ package com.example.image.m_UI;
+ 
+ import android.content.Context;
++import android.util.Log;
+ import android.widget.ImageView;
+ 
+ import com.example.image.R;
+@@ -8,13 +9,16 @@
+ 
+ public class ImageMap {
+ 
+-    public static void downloadImage(Context c, String picMap, ImageView picturemap)
++    public static void downloadImageMap(Context c, String picMap, ImageView picFloor)
++
+     {
++
++        Log.i("TAG","picMap -->" +picMap);
+         if (picMap != null && picMap.length() >0)
+         {
+-            Picasso.with(c).load(picMap).placeholder(R.drawable.placeholder).into(picturemap);
++            Picasso.with(c).load(picMap).placeholder(R.drawable.placeholder01).into(picFloor);
+         }else{
+-            Picasso.with(c).load(R.drawable.placeholder).into(picturemap);
++            Picasso.with(c).load(R.drawable.placeholder01).into(picFloor);
+         }
+     }
+ }
+Index: app/src/main/java/com/example/image/m_DataObject/Spacecraft.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_DataObject/Spacecraft.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_DataObject/Spacecraft.java	(date 1588660074118)
+@@ -14,6 +14,27 @@
+     String description_Shop;
+     String tel;
+     String picMap;
++    String typeShopName;
++    String groupName;
++
++    public Spacecraft(String id, String name, String imageUrl, String floor_Shop, String website, String opentime, String closetime, String description_Shop, String tel, String picMap, String typeShopName, String groupName) {
++        this.id = id;
++        this.name = name;
++        this.imageUrl = imageUrl;
++        this.floor_Shop = floor_Shop;
++        this.website = website;
++        this.opentime = opentime;
++        this.closetime = closetime;
++        this.description_Shop = description_Shop;
++        this.tel = tel;
++        this.picMap = picMap;
++        this.typeShopName = typeShopName;
++        this.groupName = groupName;
++    }
++
++
++
++
+ 
+ 
+     public String getPicMap() {
+@@ -97,7 +118,19 @@
+         this.tel = tel;
+     }
+ 
++    public String getTypeShopName() {
++        return typeShopName;
++    }
+ 
++    public void setTypeShopName(String typeShopName) {
++        this.typeShopName = typeShopName;
++    }
+ 
++    public String getGroupName() {
++        return groupName;
++    }
+ 
++    public void setGroupName(String groupName) {
++        this.groupName = groupName;
++    }
+ }
+Index: app/src/main/res/layout/model.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/model.xml	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/res/layout/model.xml	(date 1587981155042)
+@@ -5,11 +5,11 @@
+     xmlns:card_view="http://schemas.android.com/tools"
+     card_view:cardCornerRadius="5dp"
+     card_view:cardElevation="5dp"
+-    android:layout_margin="10dp">
++    android:layout_margin="20dp">
+ 
+     <TableLayout
+         android:layout_width="100dp"
+-        android:layout_height="150dp"
++        android:layout_height="match_parent"
+         android:orientation="horizontal">
+ 
+         <ImageView
+@@ -24,10 +24,11 @@
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
++            android:gravity="center"
+             android:padding="10dp"
+             android:text="Name"
+-            android:textSize="10dp"
+-            android:textAppearance="?android:attr/textAppearanceLarge" />
++            android:textAppearance="?android:attr/textAppearanceLarge"
++            android:textSize="10dp" />
+     </TableLayout>
+ 
+ 
+Index: app/src/main/java/com/example/image/m_mySQL/DataParser.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_mySQL/DataParser.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_mySQL/DataParser.java	(date 1589023947783)
+@@ -4,11 +4,16 @@
+ import android.content.Context;
+ import android.os.AsyncTask;
+ import android.util.Log;
++import android.view.View;
++import android.widget.AdapterView;
++import android.widget.ArrayAdapter;
+ import android.widget.GridView;
+-import android.widget.ListView;
++import android.widget.SearchView;
++import android.widget.Spinner;
+ import android.widget.Toast;
+ 
+ import com.example.image.m_DataObject.Spacecraft;
++import com.example.image.m_UI.AdapterSpinner;
+ import com.example.image.m_UI.CustomAdapter;
+ 
+ import org.json.JSONArray;
+@@ -22,14 +27,22 @@
+    Context c;
+     String jsonData;
+     GridView gv;
++    SearchView searchView;
++    Spinner spinner_floor;
++    Spinner spinner_group;
++
+ 
+     ProgressDialog pd;
+     ArrayList<Spacecraft> spacecrafts = new ArrayList<>();
+ 
+-    public DataParser(Context c, String jsonData, GridView gv) {
++
++    public DataParser(Context c, String jsonData, GridView gv, SearchView searchView,Spinner spinner_floor,Spinner spinner_group) {
+         this.c = c;
+         this.jsonData = jsonData;
+         this.gv = gv;
++        this.searchView = searchView;
++        this.spinner_floor = spinner_floor;
++        this.spinner_group = spinner_group;
+     }
+ 
+     @Override
+@@ -55,9 +68,77 @@
+ 
+         if (parsed)
+         {
+-            //BIND DATA TO LISTVIEW
+-            CustomAdapter adaper= new CustomAdapter(c,spacecrafts);
++            //BIND DATA TO GRIDVIEW
++            final CustomAdapter adaper= new CustomAdapter(c,spacecrafts);
+             gv.setAdapter(adaper);
++            final AdapterSpinner adapterSpinnerer= new AdapterSpinner(c,spacecrafts);
++            //BIND DATA TO SearchView
++            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
++                @Override
++                public boolean onQueryTextSubmit(String query) {
++                    return false;
++                }
++
++                @Override
++                public boolean onQueryTextChange(String newText) {
++
++                    adaper.getFilter().filter(newText);
++                    return false;
++                }
++            });
++
++          spinner_floor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
++                @Override
++                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
++                    Object item = parent.getItemAtPosition(position);
++                    if (position == 0 ){
++                        String all = item.toString();
++                        Toast toast = Toast.makeText ( c, "เลือก " + all, Toast.LENGTH_LONG );
++                        toast.show();
++                        adaper.getFilter().filter(null);
++                    } else if(position != 0){
++                        String ii = item.toString();
++                        Toast toast = Toast.makeText ( c, "เลือก " + ii, Toast.LENGTH_LONG );
++                        toast.show();
++                        final ArrayList<String> listfloor = new ArrayList<>();
++                       // listfloor.add(ii);
++                        adaper.getFilter().filter(ii);
++
++                    }
++
++                    view.clearFocus();
++                }
++                @Override
++                public void onNothingSelected(AdapterView<?> parent) {
++
++                }
++            });
++
++           spinner_group.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
++                @Override
++                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
++                   Object item = parent.getItemAtPosition(position);
++                                if (position == 0){
++                                    String all = item.toString();
++                                    Toast toast = Toast.makeText ( c, "เลือก " + all, Toast.LENGTH_LONG );
++                                    toast.show ();
++                                    adaper.getFilter().filter(null);
++
++                                }else if(position != 0){
++                                    String aa = item.toString();
++                                    Toast toast = Toast.makeText ( c, "เลือก "+ aa, Toast.LENGTH_LONG );
++                                    toast.show ( );
++                                  //  listfloor.add(aa);
++                                   // Log.d("TAG" ," array --> "+ listfloor );
++                                    adaper.getFilter().filter(aa);
++                                }
++                }
++                @Override
++                public void onNothingSelected(AdapterView<?> parent) {
++
++                }
++            });
++
+             Log.i("Show","อ่านค่า Result  =  " +parsed);
+         }else{
+ 
+@@ -91,9 +172,13 @@
+                 String description_Shop = jo.getString("Description_Shop");
+                 String tel = jo.getString("Tel");
+                 String picMap = jo.getString("Pic_floor");
++                String typeShopName = jo.getString("TypeShop_Name");
++                String groupName = jo.getString("Group_Name");
++
+ 
+ 
+-                spacecraft = new Spacecraft();
++
++                spacecraft = new Spacecraft(id,name,imageUrl,floor_Shop,website,opentime,closetime,description_Shop,tel,picMap,typeShopName,groupName);
+ 
+                spacecraft.setId(id);
+                 spacecraft.setName(name);
+@@ -105,6 +190,8 @@
+                 spacecraft.setTel(tel);
+                 spacecraft.setImageUrl(imageUrl);
+                 spacecraft.setPicMap(picMap);
++                spacecraft.setTypeShopName(typeShopName);
++                spacecraft.setGroupName(groupName);
+ 
+                 spacecrafts.add(spacecraft);
+                 // }
+Index: app/src/main/res/layout/activity_detail_shop.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_detail_shop.xml	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/res/layout/activity_detail_shop.xml	(date 1588355719347)
+@@ -9,54 +9,34 @@
+ 
+ 
+     <LinearLayout
+-        android:layout_width="wrap_content"
++        android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:orientation="vertical"
+         tools:ignore="MissingConstraints">
+ 
+-        <LinearLayout
+-            android:layout_width="match_parent"
+-            android:layout_height="60dp"
+-            android:orientation="vertical">
+-
+-        </LinearLayout>
+-
+         <TableRow
+             android:layout_width="match_parent"
+-            android:layout_height="33dp">
+-
+-        </TableRow>
+-        <TableRow
+-            android:layout_width="wrap_content"
+             android:layout_height="wrap_content">
+ 
+             <LinearLayout
+-                android:layout_width="386dp"
+-                android:layout_height="100dp"
++                android:layout_width="match_parent"
++                android:layout_height="392dp"
+                 android:orientation="horizontal">
+ 
+-                <TableLayout
+-                    android:layout_width="87dp"
+-                    android:layout_height="match_parent"></TableLayout>
+-
+                 <ImageView
+                     android:id="@+id/img_map"
+-                    android:layout_width="217dp"
+-                    android:layout_height="100dp"
+-                    >
++                    android:layout_width="match_parent"
++                    android:layout_height="match_parent"
++                    android:src="@drawable/placeholder01">
+ 
+                 </ImageView>
+ 
+-                <TableLayout
+-                    android:layout_width="83dp"
+-                    android:layout_height="match_parent"></TableLayout>
+-
+             </LinearLayout>
+         </TableRow>
+ 
+         <TableRow
+             android:layout_width="match_parent"
+-            android:layout_height="43dp"></TableRow>
++            android:layout_height="21dp"></TableRow>
+ 
+ 
+         <TableRow
+@@ -186,10 +166,10 @@
+ 
+             </TextView>
+         </TableRow>
++
+         <TableRow
+             android:layout_width="match_parent"
+-            android:layout_height="100dp"
+-            >
++            android:layout_height="51dp">
+ 
+             <TextView
+                 android:layout_width="wrap_content"
+@@ -198,12 +178,11 @@
+                 android:textSize="20dp"></TextView>
+ 
+             <TextView
++                android:id="@+id/description"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:text="คำอธิบาย"
+-                android:textSize="20dp"
+-                android:id="@+id/description"
+-                >
++                android:textSize="20dp">
+ 
+             </TextView>
+         </TableRow>
+Index: app/src/main/res/layout/activity_main.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_main.xml	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/res/layout/activity_main.xml	(date 1587786011738)
+@@ -63,22 +63,6 @@
+ 
+             </TableLayout>
+ 
+-            <ImageView
+-                android:id="@+id/piclg1"
+-                android:layout_width="349dp"
+-                android:layout_height="153dp"
+-                android:layout_marginTop="8dp"
+-                app:layout_constraintEnd_toEndOf="parent"
+-                app:layout_constraintStart_toStartOf="parent"
+-                app:layout_constraintTop_toBottomOf="@+id/ter21KO"
+-                app:srcCompat="@drawable/placeholder" />
+-
+-            <TableLayout
+-                android:layout_width="17dp"
+-                android:layout_height="match_parent">
+-
+-            </TableLayout>
+-
+         </LinearLayout>
+     </TableRow>
+ 
+@@ -98,18 +82,17 @@
+             </TextView>
+ 
+ 
+-
+-                <Spinner
+-                    android:id="@+id/spinfloor"
+-                    android:layout_width="67dp"
+-                    android:layout_height="20dp"
+-                    app:layout_constraintEnd_toStartOf="@+id/spingroup"
+-                    app:layout_constraintTop_toBottomOf="@+id/floortext"
+-                    tools:ignore="MissingConstraints" />
++            <Spinner
++                android:id="@+id/spinfloor"
++                android:layout_width="93dp"
++                android:layout_height="20dp"
++                app:layout_constraintEnd_toStartOf="@+id/spingroup"
++                app:layout_constraintTop_toBottomOf="@+id/floortext"
++                tools:ignore="MissingConstraints" />
+ 
+ 
+             <TextView
+-                android:layout_width="wrap_content"
++                android:layout_width="86dp"
+                 android:layout_height="match_parent"
+                 android:text="หมวดหมู่ :"
+                 android:textSize="12dp"></TextView>
+@@ -117,36 +100,35 @@
+ 
+             <Spinner
+                 android:id="@+id/spingroup"
+-                android:layout_width="96dp"
++                android:layout_width="161dp"
+                 android:layout_height="20dp"
+                 app:layout_constraintEnd_toStartOf="@+id/searchShop"
+                 app:layout_constraintTop_toBottomOf="@+id/textgroup"
+                 tools:ignore="MissingConstraints" />
+ 
+ 
+-            <TextView
+-                android:layout_width="wrap_content"
+-                android:layout_height="match_parent"
+-                android:text="ค้นหา :"
+-                android:textSize="12dp"></TextView>
++        </LinearLayout>
+ 
+ 
++    </TableRow>
++
++    <TableRow
++        android:layout_width="match_parent"
++        android:layout_height="36dp">
+ 
+-                <SearchView
+-                    android:id="@+id/searchShop"
+-                    android:layout_width="108dp"
+-                    android:layout_height="match_parent"
+-                    android:layout_marginEnd="4dp"
+-                    android:layout_marginRight="4dp"
+-                    app:layout_constraintEnd_toEndOf="parent"
+-                    app:layout_constraintTop_toBottomOf="@+id/textsearch" />
+-
+-        </LinearLayout>
+-
++        <SearchView
++            android:id="@+id/searchShop"
++            android:layout_width="match_parent"
++            android:layout_height="match_parent"
++            android:layout_marginEnd="4dp"
++            android:layout_marginRight="4dp"
++            app:layout_constraintEnd_toEndOf="parent"
++            app:layout_constraintTop_toBottomOf="@+id/textsearch"
++            android:queryHint="ค้นหาตรงนี้" ></SearchView>
+ 
+     </TableRow>
+ 
+-    <GridView
++   <GridView
+         android:id="@+id/json_gridview"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+Index: app/src/main/java/com/example/image/m_DetailActivity/Detail_shop.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/image/m_DetailActivity/Detail_shop.java	(revision 5e8b3528f60a87449c6087d108925f24ecfd34b5)
++++ app/src/main/java/com/example/image/m_DetailActivity/Detail_shop.java	(date 1588355505688)
+@@ -4,7 +4,12 @@
+ 
+ import android.content.Context;
+ import android.content.Intent;
++import android.graphics.Matrix;
+ import android.os.Bundle;
++import android.service.wallpaper.WallpaperService;
++import android.view.MotionEvent;
++import android.view.ScaleGestureDetector;
++import android.view.View;
+ import android.widget.ImageView;
+ import android.widget.TextView;
+ 
+@@ -18,11 +23,9 @@
+ public class Detail_shop extends AppCompatActivity {
+ 
+     TextView nameTxt ,idTxt,foorTxt,websiteTxt ,opentimeTxt, closetimeTxt, descriptionTxt,telTxt;
+-    ImageView imageUrlLogo , picFloor;
++    ImageView  picFloor,imageUrlLogo;
+ 
+ 
+-    Context c;
+-    ArrayList<Spacecraft> spacecrafts = new ArrayList<>();
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -38,12 +41,14 @@
+         descriptionTxt = (TextView) findViewById(R.id.description);
+         telTxt = (TextView) findViewById(R.id.tel);
+ 
+-       // picFloor = (ImageView)findViewById(R.id.img_map);
+-        imageUrlLogo = (ImageView)findViewById(R.id.img_map);
++
++        //imageUrlLogo = (ImageView)findViewById(R.id.img_map);
++
+ 
+ 
+         Intent i = this.getIntent();
+-        String name = i.getExtras().getString("ID_KEY");
++        String id = i.getExtras().getString("ID_KEY");
++        String name = i.getExtras().getString("NAME_KEY");
+         String imageUrl = i.getExtras().getString("IMAGEURL_KEY");
+         String floor_Shop = i.getExtras().getString("FLOORSHOP_KEY");
+         String website = i.getExtras().getString("WEBSITE_KEY");
+@@ -53,17 +58,20 @@
+         String tel = i.getExtras().getString("TEL_KEY");
+         String picMap = i.getExtras().getString("PICMAP_KEY");
+ 
++
++        idTxt .setText(id);
+         nameTxt.setText(name);
+-        idTxt .setText(floor_Shop);
+-        foorTxt.setText(website);
+-        websiteTxt.setText(opentime);
+-        opentimeTxt.setText(closetime);
++        foorTxt.setText(floor_Shop);
++        websiteTxt.setText(website);
++        opentimeTxt.setText(opentime);
+         closetimeTxt.setText(closetime);
+         descriptionTxt.setText(description_Shop);
+         telTxt.setText(tel);
+ 
++        picFloor = (ImageView)findViewById(R.id.img_map);
++        ImageMap.downloadImageMap(this,picMap,picFloor);
++
++    }
+ 
+ 
+-        PicassoClient.downloadImage(this,imageUrl,imageUrlLogo);
+-    }
+ }
+diff --git app/src/main/res/drawable/placeholder01.png app/src/main/res/drawable/placeholder01.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..78a00be41f396c7535df6c061b0cfc2e2f698048
+GIT binary patch
+literal 1253
+zc$@*{1RDE^P)<h;3K|Lk000e1NJLTq00CYA005Q*0{{R3WXb(R0000RP)t-s%*@P|
+zmX@5HoT{p-#l^+3v9Y70qqn!WzP`SPdvd4%000SaNLh0L01m_e01m_fl`9S#000DV
+zNkl<Zc%1E;O>f&q5Qc|eB9C0kl5-?&xAswT6Cg*jG7=v}p>=x{3j^{|a$6-wDGvI(
+zJF~kqR}8H-Xi2ufJb-pYa*TaFJ3G585P)GAhG7_nVHk#C7=~dOhG7_nVHk#C7=~dO
+zhG7_nVVJLDmPD`7c!G%Wn|mF-eZe;n(&XeC9d~UDsdEnCJnP+~UBBck&9u~e#I-Fp
+z)b|KrQ0fiHo;Ew%N^ha{9&>GrB>Mb55h>W?56F%*J=_*i+UT4sy~zq)KOT2&312L!
+z-#J)ioHh{!d*0yd{vnj!G6!CEZ4F24Xk3?&z0!9I{Nl<)u9FC**QLKX?%EnMBdO2*
+ziM}I3QgYJZE41DK)8{W-Tf>rN3FEs7)r~+*u+3F=WHj;~r3~@QSt9lNqQSKz{Exch
+zJXSY6nVkEfzKBWmuJl&*!HXJPyJUbJPnUPm3Uoq4HkJ?E1S{RN5~TDxW3TvjU32Y_
+z+XA~R&M-SKNIQwJbO<*hbw!n+O79@TnTKWU(6uvgwYpc6Ux`Q!5w@6^1xx9*<<fFd
+zbL~>^YnuE&+)go%l?eNJN}cQtJ?ge4MmJAlSaa=CFUFNd-N&X3p?+8l3uFG5dQ+Jx
+zHP_C-xW@3~j?|6nLCb`>9_ae;GstzVr})yS>lp6G^`yjY+pcmnwBefAQ~n~kE?L-j
+zZPL5KELUbMMch+;02$X(Ppzo>!rXtEdXun^`n$NKwklusMavfE{_9Y0AM4v@L~S<q
+zf08zmdo^QIkVnRHq4oYwGI5VobL|8bo&8YF9lAQ$bh+YHVZ=}Al@Dpp(Z~Kw>MTyx
+z*ix-M*wi{=Vr+M`UKvr^bM&zPbtpYOaT3t5d(<2p8ZwbO<#zH}@1Fk09Gf1_7l9al
+zeqUgpN%UJVrM~5%tlW`fGPuTxvRu(F(<eHk9=LXdJe!Zz(OlMA^Uy1!o>v9d*5?ai
+z+0Xe{p5rG}Xq8nb{B@~sLOJm~;<}!Z$FSzw8QVntMl;ja{LyAZgY8unP3v{9#rdx0
+z$}kMWFbu;m48t%C!!QiPFbu;m%)f%AKmQm0n|g(O&Ao}5-Vm=WdX+T-utQMqk<OA8
+zz&mjdRt%7|t5nNyzkA_HgI?K=cd*rZ-EYz-Y;G2*^#Fd+zFHFSJzSrIo%;C2JDY&D
+z2+25SIq6-T!(fe1485mISZTe^Ts7Xr+QMMdkzViq-P~Dc@GIQiyaDT8n!6hcmxYgl
+z7~YtA!>b_HdhJv-Zfx1RPn{$?=7XKOaWGk|-@*k((n_VdfQ<CwBUs_5d<~oQZU<|v
+z*D9OP@|UYl^x}MzVT-SpF=?Xi$%JM8hVaRumm#Y7+K=#MeBm<gCce}m1#$VX#Gp!1
+zWQ_RQ3pmj0jo{1tg?!$XUdmrstRLsFO=l#EOqIXjpC0O!7qT_#19ViZsb8!QuuroT
+z{N##yB~#T0@Z$!(DraV*tiN69{TmFrewXJT^4Pb4ufw|PTLHr`Oh5bye<7;!m;sZb
+P00000NkvXXu0mjf!S-`>
+

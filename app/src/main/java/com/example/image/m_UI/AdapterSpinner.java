@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Filter;
 import android.widget.Filterable;
@@ -16,23 +15,19 @@ import com.example.image.R;
 import com.example.image.m_DataObject.Spacecraft;
 import com.example.image.m_DetailActivity.Detail_shop;
 
-
 import java.util.ArrayList;
 
-public class CustomAdapter extends BaseAdapter implements Filterable {
-
+public class AdapterSpinner extends BaseAdapter implements Filterable {
 
     Context c;
     ArrayList<Spacecraft> spacecrafts;
     ArrayList<Spacecraft> filterList;
-
     CustomFilter filter;
+
 
     LayoutInflater inflater;
 
-
-
-    public CustomAdapter(Context c, ArrayList<Spacecraft> spacecrafts) {
+    public AdapterSpinner(Context c, ArrayList<Spacecraft> spacecrafts) {
         this.c = c;
         this.spacecrafts = spacecrafts;
         this.filterList = spacecrafts;
@@ -53,24 +48,19 @@ public class CustomAdapter extends BaseAdapter implements Filterable {
 
     @Override
     public long getItemId(int position) {
-
         return spacecrafts.indexOf(getItem(position));
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
         if (convertView == null)
         {
             convertView = LayoutInflater.from(c).inflate(R.layout.model,parent,false);
             //convertView = inflater.inflate(R.layout.model,parent,false);
         }
-
-
         //SET DATA
         TextView nameTxt = (TextView) convertView.findViewById(R.id.nameTxt);
         ImageView img = (ImageView) convertView.findViewById(R.id.logoImage);
-
 
 
         final Spacecraft s = (Spacecraft) this.getItem(position);
@@ -95,24 +85,24 @@ public class CustomAdapter extends BaseAdapter implements Filterable {
             }
         });
 
+
         return convertView;
     }
 
-    private void openDetailActivity(String id, String name, String imageUrl,String floor_Shop,
-                                    String website,String opentime, String  closetime, String  description_Shop,
-                                    String  tel ,String picMap,String typeShopName,String groupName )
-    {
+    private void openDetailActivity(String id, String name, String imageUrl, String floor_shop, String website, String opentime, String closetime,
+                                            String description_shop, String tel, String picMap, String typeShopName, String groupName) {
+
         Intent i = new Intent(c, Detail_shop.class);
 
         //PACK DATA
         i.putExtra("ID_KEY",id);
         i.putExtra("NAME_KEY",name);
         i.putExtra("IMAGEURL_KEY",imageUrl);
-        i.putExtra("FLOORSHOP_KEY",floor_Shop);
+        i.putExtra("FLOORSHOP_KEY",floor_shop);
         i.putExtra("WEBSITE_KEY",website);
         i.putExtra("OPENTIME_KEY",opentime);
         i.putExtra("CLOSETIME_KEY",closetime);
-        i.putExtra("DESCRIPTION_KEY",description_Shop);
+        i.putExtra("DESCRIPTION_KEY",description_shop);
         i.putExtra("TEL_KEY",tel);
         i.putExtra("PICMAP_KEY",picMap);
         i.putExtra("TYPESHOPNAME_KEY",typeShopName);
@@ -127,12 +117,11 @@ public class CustomAdapter extends BaseAdapter implements Filterable {
     @Override
     public Filter getFilter() {
 
-        if (filter == null) {
-            filter = new CustomFilter();
+        if (filter == null)
+        {
+            filter  = new CustomFilter();
         }
-            return filter;
-
-
+        return filter;
     }
 
     class CustomFilter extends Filter
@@ -143,32 +132,32 @@ public class CustomAdapter extends BaseAdapter implements Filterable {
 
             FilterResults results = new FilterResults();
 
-           if (constraint != null && constraint.length() >0)
-           {
-               //Constraint To Upper
-               constraint = constraint.toString().toUpperCase();
+            if (constraint != null && constraint.length() >0)
+            {
+                //Constraint To Upper
+                constraint = constraint.toString().toUpperCase();
 
-               ArrayList<Spacecraft> filters = new ArrayList<Spacecraft>();
+                ArrayList<Spacecraft> filters = new ArrayList<Spacecraft>();
 
-               //Filtering
-               for (int i =0 ; i < filterList.size();i++)
-               {
-                   if (filterList.get(i).getName().toUpperCase().contains(constraint) || filterList.get(i).getFloor_Shop().toUpperCase().contains(constraint) || filterList.get(i).getGroupName().toUpperCase().contains(constraint))
-                   {
-                       Spacecraft ss = new Spacecraft(filterList.get(i).getId(),filterList.get(i).getName(),filterList.get(i).getImageUrl(),filterList.get(i).getFloor_Shop(),filterList.get(i).getWebsite(),
-                               filterList.get(i).getOpentime(),filterList.get(i).getClosetime(),filterList.get(i).getDescription_Shop(),filterList.get(i).getTel(),filterList.get(i).getPicMap(),filterList.get(i).getTypeShopName(),
-                               filterList.get(i).getGroupName());
-                       filters.add(ss);
+                //Filtering
+                for (int i =0 ; i < filterList.size();i++)
+                {
+                    if (filterList.get(i).getFloor_Shop().toUpperCase().contains(constraint) && filterList.get(i).getGroupName().toUpperCase().contains(constraint))
+                    {
+                        Spacecraft ss = new Spacecraft(filterList.get(i).getId(),filterList.get(i).getName(),filterList.get(i).getImageUrl(),filterList.get(i).getFloor_Shop(),filterList.get(i).getWebsite(),
+                                filterList.get(i).getOpentime(),filterList.get(i).getClosetime(),filterList.get(i).getDescription_Shop(),filterList.get(i).getTel(),filterList.get(i).getPicMap(),filterList.get(i).getTypeShopName(),
+                                filterList.get(i).getGroupName());
+                        filters.add(ss);
 
-                   }
-                   results.count = filters.size();
-                   results.values = filters;
-               }
-           }else
+                    }
+                    results.count = filters.size();
+                    results.values = filters;
+                }
+            }else
             {
                 results.count = filterList.size();
                 results.values = filterList;
-           }
+            }
 
             return results;
         }

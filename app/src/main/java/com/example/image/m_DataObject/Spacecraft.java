@@ -14,6 +14,27 @@ public class Spacecraft {
     String description_Shop;
     String tel;
     String picMap;
+    String typeShopName;
+    String groupName;
+
+    public Spacecraft(String id, String name, String imageUrl, String floor_Shop, String website, String opentime, String closetime, String description_Shop, String tel, String picMap, String typeShopName, String groupName) {
+        this.id = id;
+        this.name = name;
+        this.imageUrl = imageUrl;
+        this.floor_Shop = floor_Shop;
+        this.website = website;
+        this.opentime = opentime;
+        this.closetime = closetime;
+        this.description_Shop = description_Shop;
+        this.tel = tel;
+        this.picMap = picMap;
+        this.typeShopName = typeShopName;
+        this.groupName = groupName;
+    }
+
+
+
+
 
 
     public String getPicMap() {
@@ -97,7 +118,19 @@ public class Spacecraft {
         this.tel = tel;
     }
 
+    public String getTypeShopName() {
+        return typeShopName;
+    }
 
+    public void setTypeShopName(String typeShopName) {
+        this.typeShopName = typeShopName;
+    }
 
+    public String getGroupName() {
+        return groupName;
+    }
 
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
 }

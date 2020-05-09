@@ -63,22 +63,6 @@
 
             </TableLayout>
 
-            <ImageView
-                android:id="@+id/piclg1"
-                android:layout_width="349dp"
-                android:layout_height="153dp"
-                android:layout_marginTop="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/ter21KO"
-                app:srcCompat="@drawable/placeholder" />
-
-            <TableLayout
-                android:layout_width="17dp"
-                android:layout_height="match_parent">
-
-            </TableLayout>
-
         </LinearLayout>
     </TableRow>
 
@@ -98,18 +82,17 @@
             </TextView>
 
 
-
-                <Spinner
-                    android:id="@+id/spinfloor"
-                    android:layout_width="67dp"
-                    android:layout_height="20dp"
-                    app:layout_constraintEnd_toStartOf="@+id/spingroup"
-                    app:layout_constraintTop_toBottomOf="@+id/floortext"
-                    tools:ignore="MissingConstraints" />
+            <Spinner
+                android:id="@+id/spinfloor"
+                android:layout_width="93dp"
+                android:layout_height="20dp"
+                app:layout_constraintEnd_toStartOf="@+id/spingroup"
+                app:layout_constraintTop_toBottomOf="@+id/floortext"
+                tools:ignore="MissingConstraints" />
 
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="86dp"
                 android:layout_height="match_parent"
                 android:text="หมวดหมู่ :"
                 android:textSize="12dp"></TextView>
@@ -117,36 +100,35 @@
 
             <Spinner
                 android:id="@+id/spingroup"
-                android:layout_width="96dp"
+                android:layout_width="161dp"
                 android:layout_height="20dp"
                 app:layout_constraintEnd_toStartOf="@+id/searchShop"
                 app:layout_constraintTop_toBottomOf="@+id/textgroup"
                 tools:ignore="MissingConstraints" />
 
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="ค้นหา :"
-                android:textSize="12dp"></TextView>
-
-
-
-                <SearchView
-                    android:id="@+id/searchShop"
-                    android:layout_width="108dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginRight="4dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/textsearch" />
-
         </LinearLayout>
 
 
     </TableRow>
 
-    <GridView
+    <TableRow
+        android:layout_width="match_parent"
+        android:layout_height="36dp">
+
+        <SearchView
+            android:id="@+id/searchShop"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="4dp"
+            android:layout_marginRight="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textsearch"
+            android:queryHint="ค้นหาตรงนี้" ></SearchView>
+
+    </TableRow>
+
+   <GridView
         android:id="@+id/json_gridview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
